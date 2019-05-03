@@ -1,0 +1,53 @@
+```{r}
+dat=read.csv("train.csv")
+new.data <- na.omit(dat)
+new.data$blue=factor(new.data$blue)
+new.data$dual_sim=factor(new.data$dual_sim)
+new.data$four_g=factor(new.data$four_g)
+new.data$n_cores=factor(new.data$n_cores)
+new.data$three_g=factor(new.data$three_g)
+new.data$touch_screen=factor(new.data$touch_screen)
+new.data$wifi=factor(new.data$wifi)
+new.data$price_range=factor(new.data$price_range)
+```
+
+```{r}
+set.seed(2)
+train.index <- sample(c(1:dim(new.data)[1]), dim(new.data)[1]*0.6)
+train.df <- new.data[train.index,]
+valid.df <- new.data[-train.index,]
+dim(train.df)
+
+```
+
+```{r}
+library(e1071)
+model <- svm(price_range~.,train.df,kernel="linear")
+y=valid.df$price_range
+svm.pred = predict(model,valid.df)
+
+
+
+
+conf=table(svm.pred,y)
+
+summary(model)
+
+```
+
+```{r}
+library(caret) 
+
+confusionMatrix(conf)
+```
+
+```{r}
+library(randomForest)
+model <- randomForest(price_range~.,train.df)
+
+y=valid.df$price_range
+rf.pred = predict(model, valid.df)
+conf=table(rf.pred,y)
+confusionMatrix(conf)
+```
+
