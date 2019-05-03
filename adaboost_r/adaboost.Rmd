@@ -1,0 +1,111 @@
+
+
+```{r}
+#input for question 2
+x=data.frame(matrix(rnorm(120000),12000,10))
+
+y=2*as.numeric(apply(x,1,function(x){(sum(x^2)>9.34)}))-1
+
+
+train.id = sample(c(1:12000),2000)
+
+y_train<-y[train.id]
+x_train<-x[train.id,]
+y_test<-y[-train.id]
+x_test<-x[-train.id,]
+
+traindim=length(y_train)
+testdim=length(y_test)
+
+
+```
+
+```{r}
+#input for question4
+x_train_class2 = matrix(rnorm(10000),1000,10);
+x_train_class1 = matrix(rnorm(35000),3500,10);
+x_train_class1 = x_train_class1[apply(x_train_class2,1,function(x){(sum(x^2)>12)}),]
+y1_train =2*as.numeric(apply(x_train_class1,1,function(x){(sum(x^2)>9.34)}))-1
+
+x_train=rbind(x_train_class1,x_train_class2)
+dim(x_train)
+y2_train=sample(-1, size=1000,replace = TRUE)
+y_train=c(y1_train,y2_train)
+traindim=length(y_train)
+
+x_test_class2 = matrix(rnorm(50000),5000,10)
+x_test_class1 = matrix(rnorm(17500),17500,10);
+x_test_class1 = x_test_class1[apply(x_test_class1,1,function(x){(sum(x^2)>12)}),]
+x_test=rbind(x_test_class1,x_test_class2)
+dim(x_test)
+
+y1_test =2*as.numeric(apply(x_test_class1,1,function(x){(sum(x^2)>9.34)}))-1
+
+
+y2_test=sample(-1, size=5000,replace = TRUE)
+y_test=c(y1_test,y2_test)
+
+testdim=length(y_test)
+
+train.index <- sample(c(1:dim(x_train)[1]))
+x_train= x_train[train.index,]
+y_train=y_train[train.index]
+x_train=as.data.frame(x_train)
+x_test=as.data.frame(x_test)
+```
+
+```{r}
+train_error<-rep(0,500) 
+# Keep track of errors
+test_error<-rep(0,500)
+f<-rep(0,traindim) # 100 pts in training data
+f_test<-rep(0,testdim) # 50 pts in test data
+i<-1
+
+
+
+```
+
+```{r}
+library(rpart)
+while(i <= 500){
+w <-exp(-y_train*f) 
+
+# This is a shortcut to compute w 
+w <-w/sum(w)
+
+fit <-rpart(y_train ~.,data =x_train,weights = w, method="class")
+g<--1 + 2*(predict(fit,x_train)[,2]>.5) 
+# make -1 or 1
+g_test <--1+2*(predict(fit,x_test)[,2]>.5)
+e <-sum(w*(y_train*g<0))
+# If tree perfectly gets data, boosting terminates
+if(abs(e) < 1e-8){
+f=g;
+f_test=g_test;
+break
+}
+alpha <-.5*log ( (1-e) / e )
+f <-f + alpha*g
+f_test <-f_test + alpha*g_test
+train_error[i] <-sum(1*f*y_train<0)/traindim
+test_error[i] <-sum(1*f_test*y_test<0)/testdim
+i<-i+1
+}
+
+
+```
+
+```{r}
+y_hat_train = sign(f);
+table(y_hat_train,y_train)
+y_hat_test = sign(f_test);
+table(y_test, y_hat_test)
+#y_hat_test#y_test -1 1#-1 34 0#1 0 16
+plot(seq(1,500),test_error,type="l",ylim=c(0,.5),ylab="Error Rate",xlab="Iterations",lwd=2, main='AdaBoost')
+lines(train_error,lwd=2,col="purple")
+legend(50,.2,c("Training Error","Test Error"), col=c("purple","black"),lwd=2)
+```
+
+
+
